@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pulse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAFAF9; --panel:#FFFFFF; --ink:#0B0B0D; --ink-dim:#6B6B75;
+  --line:rgba(11,11,13,.1); --flare:#6D5DFC; --flare-soft:#8B7DFF; --ember:#FF5A6E;
+  --card:#F1F1EF;
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme: dark){
+    --bg:#0B0B0D; --panel:#151517; --ink:#F6F6F5; --ink-dim:#9A9AA3;
+    --line:rgba(255,255,255,.09); --card:#1B1B1F;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B0B0D; --panel:#151517; --ink:#F6F6F5; --ink-dim:#9A9AA3;
+  --line:rgba(255,255,255,.09); --card:#1B1B1F;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
+  height:100%; padding-top:env(safe-area-inset-top,0); padding-bottom:env(safe-area-inset-bottom,0);
+}
+html,body{height:100%}
+h1,h2,h3,.brand{font-family:'Space Grotesk',sans-serif}
+button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+a{color:inherit; text-decoration:none}
+img,video{max-width:100%}
+.app{display:flex; height:100vh}
+
+/* ---------- Sidebar (desktop) ---------- */
+.sidebar{
+  width:230px; flex:none; border-right:1px solid var(--line); padding:20px 14px;
+  display:flex; flex-direction:column; gap:4px; overflow-y:auto;
+}
+.brand{font-size:22px; font-weight:700; padding:6px 10px 18px; display:flex; align-items:center; gap:8px}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--flare)}
+.nav-item{
+  display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:12px;
+  font-weight:600; font-size:15px; color:var(--ink-dim);
+}
+.nav-item svg{flex:none}
+.nav-item.active{background:var(--card); color:var(--ink)}
+.nav-item:hover{color:var(--ink)}
+.side-footer{margin-top:auto; padding:12px 10px; display:flex; flex-direction:column; gap:10px}
+.me-chip{display:flex; align-items:center; gap:10px; padding:8px; border-radius:12px; background:var(--card)}
+.avatar{width:36px;height:36px;border-radius:50%;object-fit:cover; flex:none}
+.me-chip .who{min-width:0}
+.me-chip .who b{display:block; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.me-chip .who span{font-size:12px; color:var(--ink-dim)}
+.theme-btn{display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:12px; font-size:14px; font-weight:600; color:var(--ink-dim); border:1px solid var(--line)}
+.theme-btn:hover{color:var(--ink)}
+
+/* ---------- Main / views ---------- */
+.main{flex:1; min-width:0; overflow:hidden; position:relative}
+.view{display:none; height:100%; overflow-y:auto}
+.view.active{display:block}
+
+/* Feed */
+.feed-wrap{display:flex; justify-content:center; height:100%}
+.feed{
+  width:100%; max-width:420px; height:100%; overflow-y:auto; scroll-snap-type:y mandatory;
+  scroll-padding-top:env(safe-area-inset-top,0);
+}
+.feed::-webkit-scrollbar{display:none}
+.card{
+  position:relative; height:100%; min-height:520px; scroll-snap-align:start; scroll-snap-stop:always;
+  border-radius:0; background:#000; display:flex; align-items:stretch; overflow:hidden;
+}
+.card video{width:100%; height:100%; object-fit:cover; cursor:pointer}
+.card .veil{
+  position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.65) 100%);
+  pointer-events:none;
+}
+.card .meta{position:absolute; left:16px; right:88px; bottom:22px; color:#fff}
+.card .meta .who{display:flex; align-items:center; gap:8px; margin-bottom:8px}
+.card .meta .who b{font-size:14.5px}
+.card .meta .who .avatar{width:32px;height:32px}
+.follow-pill{font-size:12px; font-weight:700; background:var(--ember); padding:3px 10px; border-radius:999px}
+.follow-pill.following{background:rgba(255,255,255,.18)}
+.caption{font-size:14px; line-height:1.4; margin:0 0 6px}
+.hashtags{font-size:13.5px; color:#DADAF0; margin:0}
+.rail{position:absolute; right:12px; bottom:24px; display:flex; flex-direction:column; align-items:center; gap:18px; color:#fff}
+.rail button{display:flex; flex-direction:column; align-items:center; gap:4px}
+.rail .count{font-size:12px; font-weight:700}
+.icon-btn{
+  width:46px;height:46px;border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:rgba(20,20,24,.4); backdrop-filter:blur(6px);
+}
+.icon-btn.liked{color:var(--ember)}
+.sound-btn{position:absolute; top:16px; right:16px; color:#fff; z-index:2}
+.progress{position:absolute; top:0; left:0; height:2.5px; background:#fff; opacity:.85}
+
+.empty{display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:8px; color:var(--ink-dim); text-align:center; padding:40px}
+.empty h3{color:var(--ink); margin:0}
+.btn{background:var(--flare); color:#fff; font-weight:700; font-size:14px; padding:10px 20px; border-radius:999px}
+.btn:hover{background:var(--flare-soft)}
+.btn.ghost{background:transparent; border:1px solid var(--line); color:var(--ink)}
+
+/* Right rail (desktop, feed view only) */
+.right-rail{width:280px; flex:none; border-left:1px solid var(--line); padding:20px; overflow-y:auto}
+.right-rail h4{font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-dim); margin:18px 0 10px}
+.right-rail h4:first-child{margin-top:0}
+.suggest-row{display:flex; align-items:center; gap:10px; padding:8px 0}
+.suggest-row .who{flex:1; min-width:0}
+.suggest-row .who b{display:block; font-size:13.5px}
+.suggest-row .who span{font-size:12px; color:var(--ink-dim)}
+.tag-row{display:flex; justify-content:space-between; padding:7px 0; font-size:13.5px}
+.tag-row span{color:var(--ink-dim); font-size:12px}
+.mini-follow{font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; border:1px solid var(--line)}
+.mini-follow.following{background:var(--card)}
+
+/* Generic content views (discover/profile/upload) */
+.page{max-width:900px; margin:0 auto; padding:28px 24px 90px}
+.page h2{font-size:24px; margin:0 0 18px}
+.search-box{
+  display:flex; align-items:center; gap:10px; background:var(--card); border-radius:14px; padding:12px 16px; margin-bottom:22px;
+}
+.search-box input{flex:1; background:none; border:none; color:var(--ink); font-size:15px; outline:none}
+.chip-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:26px}
+.chip{background:var(--card); border-radius:999px; padding:8px 14px; font-size:13.5px; font-weight:600}
+.grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:12px}
+.tile{position:relative; border-radius:14px; overflow:hidden; aspect-ratio:9/16; background:var(--card); cursor:pointer}
+.tile video{width:100%; height:100%; object-fit:cover}
+.tile .tile-cap{position:absolute; left:8px; right:8px; bottom:8px; color:#fff; font-size:12px; display:flex; align-items:center; gap:4px; text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.creator-card{display:flex; align-items:center; gap:12px; background:var(--card); border-radius:14px; padding:14px; margin-bottom:10px}
+.creator-card .who{flex:1; min-width:0}
+.creator-card .who b{display:block}
+.creator-card .who span{font-size:12.5px; color:var(--ink-dim)}
+
+/* Profile */
+.profile-head{display:flex; gap:22px; align-items:center; flex-wrap:wrap; margin-bottom:8px}
+.profile-head .avatar{width:96px;height:96px}
+.profile-head h2{margin:0 0 2px}
+.handle{color:var(--ink-dim); font-size:14px; margin:0 0 10px}
+.stat-row{display:flex; gap:22px; margin:12px 0}
+.stat b{display:block; font-size:17px}
+.stat span{font-size:12.5px; color:var(--ink-dim)}
+.bio{font-size:14.5px; max-width:480px; margin:0 0 14px; color:var(--ink-dim)}
+
+/* Upload */
+.form-field{margin-bottom:16px}
+.form-field label{display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:var(--ink-dim)}
+.form-field input, .form-field textarea, .form-field select{
+  width:100%; padding:11px 13px; border-radius:12px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font-size:14px; font-family:inherit;
+}
+.form-field textarea{resize:vertical; min-height:70px}
+.clip-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(90px,1fr)); gap:8px}
+.clip-pick{aspect-ratio:9/16; border-radius:10px; overflow:hidden; border:2px solid transparent; cursor:pointer; position:relative}
+.clip-pick.selected{border-color:var(--flare)}
+.clip-pick video{width:100%; height:100%; object-fit:cover; pointer-events:none}
+.toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:12px 20px; border-radius:999px; font-size:13.5px; font-weight:600; z-index:80; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+
+/* Modals */
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:flex-end; justify-content:center; z-index:60}
+.overlay.open{display:flex}
+@media(min-width:760px){.overlay{align-items:center}}
+.sheet{background:var(--panel); width:100%; max-width:420px; max-height:82vh; border-radius:20px 20px 0 0; display:flex; flex-direction:column; overflow:hidden}
+@media(min-width:760px){.sheet{border-radius:20px}}
+.sheet-head{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid var(--line)}
+.sheet-head h3{margin:0; font-size:16px}
+.sheet-body{overflow-y:auto; padding:14px 18px}
+.comment{display:flex; gap:10px; padding:10px 0; align-items:flex-start}
+.comment .who{flex:1; min-width:0}
+.comment b{font-size:13px; margin-right:6px}
+.comment p{margin:2px 0 0; font-size:13.5px}
+.comment small{color:var(--ink-dim); font-size:11px}
+.comment button{color:var(--ink-dim); font-size:11px}
+.comment-input{display:flex; gap:8px; padding:12px 18px; border-top:1px solid var(--line)}
+.comment-input input{flex:1; background:var(--card); border:none; border-radius:999px; padding:10px 16px; color:var(--ink); font-size:14px; outline:none}
+
+/* Auth */
+.auth-card{max-width:360px; margin:60px auto; text-align:center}
+.auth-card .brand{justify-content:center; margin-bottom:4px}
+.auth-card p{color:var(--ink-dim); font-size:14px; margin-bottom:22px}
+.switcher{display:flex; background:var(--card); border-radius:12px; padding:4px; margin-bottom:18px}
+.switcher button{flex:1; padding:8px; border-radius:9px; font-size:13.5px; font-weight:700; color:var(--ink-dim)}
+.switcher button.active{background:var(--panel); color:var(--ink)}
+.err{color:var(--ember); font-size:13px; margin-top:8px}
+
+/* Bottom nav (mobile) */
+.bottom-nav{display:none}
+@media(max-width:760px){
+  .sidebar,.right-rail{display:none}
+  .bottom-nav{
+    display:flex; position:fixed; left:0; right:0; bottom:0; height:60px; background:var(--panel);
+    border-top:1px solid var(--line); z-index:40; padding-bottom:env(safe-area-inset-bottom,0);
+  }
+  .bottom-nav button{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color:var(--ink-dim); font-size:10px; font-weight:700}
+  .bottom-nav button.active{color:var(--flare)}
+  .main{padding-bottom:60px}
+  .card{min-height:calc(100vh - 60px)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="brand"><span class="dot"></span>Pulse</div>
+    <a href="#" class="nav-item" data-view="feed">🏠 Home</a>
+    <a href="#" class="nav-item" data-view="discover">🔍 Discover</a>
+    <a href="#" class="nav-item" data-view="following">➕ Following</a>
+    <a href="#" class="nav-item" data-view="upload">⬆️ Upload</a>
+    <a href="#" class="nav-item" data-view="inbox">🔔 Inbox</a>
+    <a href="#" class="nav-item" data-view="profile">👤 Profile</a>
+    <div class="side-footer">
+      <button class="theme-btn" id="themeBtn">🌓 Toggle theme</button>
+      <div class="me-chip" id="meChip"></div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+
+    <section id="view-feed" class="view active">
+      <div class="feed-wrap">
+        <div class="feed" id="feedList"></div>
+      </div>
+    </section>
+
+    <section id="view-discover" class="view">
+      <div class="page">
+        <h2>Discover</h2>
+        <div class="search-box">🔎<input id="searchInput" placeholder="Search accounts, captions, #hashtags"></div>
+        <h4 style="font-size:13px;text-transform:uppercase;color:var(--ink-dim);letter-spacing:.04em;margin:0 0 10px">Trending hashtags</h4>
+        <div class="chip-row" id="trendChips"></div>
+        <h4 style="font-size:13px;text-transform:uppercase;color:var(--ink-dim);letter-spacing:.04em;margin:0 0 10px">Popular videos</h4>
+        <div class="grid" id="discoverGrid"></div>
+      </div>
+    </section>
+
+    <section id="view-following" class="view">
+      <div class="page"><h2>Following</h2><div class="feed-wrap" style="height:auto"><div class="feed" id="followingFeed" style="height:70vh"></div></div></div>
+    </section>
+
+    <section id="view-upload" class="view">
+      <div class="page" style="max-width:520px">
+        <h2>Upload a video</h2>
+        <div class="form-field">
+          <label>Pick a clip</label>
+          <div class="clip-grid" id="clipGrid"></div>
+        </div>
+        <div class="form-field"><label>Caption</label><textarea id="capInput" placeholder="Say something about this video..."></textarea></div>
+        <div class="form-field"><label>Hashtags (space or comma separated)</label><input id="tagInput" placeholder="#demo #pulse"></div>
+        <div class="form-field">
+          <label>Privacy</label>
+          <select id="privInput"><option value="public">Public</option><option value="private">Private</option></select>
+        </div>
+        <button class="btn" id="publishBtn" style="width:100%">Publish</button>
+      </div>
+    </section>
+
+    <section id="view-inbox" class="view">
+      <div class="page" style="max-width:560px"><h2>Notifications</h2><div id="inboxList"></div></div>
+    </section>
+
+    <section id="view-profile" class="view">
+      <div class="page" id="profilePage"></div>
+    </section>
+
+    <section id="view-auth" class="view">
+      <div class="page auth-card">
+        <div class="brand">⚡ Pulse</div>
+        <p>Short videos, made by people you actually want to follow.</p>
+        <div class="switcher">
+          <button id="tabLogin" class="active">Log in</button>
+          <button id="tabRegister">Sign up</button>
+        </div>
+        <div id="loginForm">
+          <div class="form-field"><label>Email</label><input id="loginEmail" placeholder="demo@pulse.app"></div>
+          <div class="form-field"><label>Password</label><input id="loginPass" type="password" placeholder="demo1234"></div>
+          <button class="btn" id="loginBtn" style="width:100%">Log in</button>
+        </div>
+        <div id="registerForm" style="display:none">
+          <div class="form-field"><label>Username</label><input id="regUser" placeholder="yourname"></div>
+          <div class="form-field"><label>Email</label><input id="regEmail" placeholder="you@example.com"></div>
+          <div class="form-field"><label>Password</label><input id="regPass" type="password" placeholder="At least 6 characters"></div>
+          <button class="btn" id="regBtn" style="width:100%">Create account</button>
+        </div>
+        <p id="authErr" class="err"></p>
+        <button class="btn ghost" id="demoBtn" style="width:100%; margin-top:10px">Continue in demo mode</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Right rail -->
+  <aside class="right-rail" id="rightRail"></aside>
+
+</div>
+
+<nav class="bottom-nav">
+  <button data-view="feed">🏠</button>
+  <button data-view="discover">🔍</button>
+  <button data-view="upload">➕</button>
+  <button data-view="inbox">🔔</button>
+  <button data-view="profile">👤</button>
+</nav>
+
+<!-- Comments sheet -->
+<div class="overlay" id="commentsOverlay">
+  <div class="sheet">
+    <div class="sheet-head"><h3>Comments</h3><button onclick="closeOverlay('commentsOverlay')">✕</button></div>
+    <div class="sheet-body" id="commentsList"></div>
+    <div class="comment-input"><input id="commentInput" placeholder="Add a comment..."><button class="btn" id="sendComment">Post</button></div>
+  </div>
+</div>
+<div id="toastHost"></div>
+
+<script>
+/* ---------------- State & persistence ---------------- */
+const LS_KEY = "pulse.state.v1";
+const now = Date.now();
+const h = (n) => new Date(now - n*3600000).toISOString();
+const uid = () => Math.random().toString(36).slice(2,10);
+const clip = (name) => `https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/${name}.mp4`;
+
+const seed = {
+  users: [
+    {id:"u1", username:"nova.codes", displayName:"Nova", bio:"Building things in public. Coffee-powered.", avatar:"https://i.pravatar.cc/150?img=47", password:"demo1234", email:"demo@pulse.app"},
+    {id:"u2", username:"mara.makes", displayName:"Mara Chen", bio:"Ceramics, clay, and chaos.", avatar:"https://i.pravatar.cc/150?img=32", password:"demo1234", email:"mara@pulse.app"},
+    {id:"u3", username:"theo.travels", displayName:"Theo Reyes", bio:"48 countries and counting.", avatar:"https://i.pravatar.cc/150?img=13", password:"demo1234", email:"theo@pulse.app"},
+    {id:"u4", username:"kira.kitchen", displayName:"Kira Odom", bio:"5-ingredient recipes only.", avatar:"https://i.pravatar.cc/150?img=25", password:"demo1234", email:"kira@pulse.app"},
+    {id:"u5", username:"leo.lifts", displayName:"Leo Park", bio:"Powerlifting coach. Form over ego.", avatar:"https://i.pravatar.cc/150?img=60", password:"demo1234", email:"leo@pulse.app"},
+  ],
+  videos: [
+    {id:"v1", userId:"u2", src:clip("ForBiggerFun"), caption:"Throwing a bowl at 6am because the light was perfect", tags:["#ceramics","#studiolife"], priv:"public", createdAt:h(3)},
+    {id:"v2", userId:"u3", src:clip("ForBiggerJoyrides"), caption:"Somewhere in the Atlas Mountains. No notifications for 9 days.", tags:["#travel","#offgrid"], priv:"public", createdAt:h(6)},
+    {id:"v3", userId:"u4", src:clip("ForBiggerMeltdowns"), caption:"3-ingredient pasta that broke the algorithm last week", tags:["#cooking","#easyrecipes"], priv:"public", createdAt:h(10)},
+    {id:"v4", userId:"u5", src:clip("ForBiggerEscapes"), caption:"Fix your squat depth with this one drill", tags:["#fitness","#formcheck"], priv:"public", createdAt:h(14)},
+    {id:"v5", userId:"u1", src:clip("ForBiggerBlazes"), caption:"Shipped a full app in a weekend. Here's the build log", tags:["#buildinpublic","#webdev"], priv:"public", createdAt:h(20)},
+    {id:"v6", userId:"u3", src:clip("Sintel"), caption:"Desert sunsets hit different when you're this far from home", tags:["#sunset","#wanderlust"], priv:"public", createdAt:h(28)},
+    {id:"v7", userId:"u2", src:clip("TearsOfSteel"), caption:"Glaze test #14. The blue finally worked", tags:["#pottery","#process"], priv:"public", createdAt:h(36)},
+  ],
+  likes: [{userId:"u3",videoId:"v1"},{userId:"u5",videoId:"v1"}],
+  comments: [
+    {id:uid(), userId:"u3", videoId:"v1", text:"The lighting in this is unreal", createdAt:h(2)},
+    {id:uid(), userId:"u5", videoId:"v1", text:"What clay body is that?", createdAt:h(1)},
+  ],
+  follows: [{follower:"u1",following:"u2"},{follower:"u1",following:"u3"},{follower:"u2",following:"u1"}],
+  notifications: [
+    {id:uid(), recipient:"u1", sender:"u2", type:"follow", videoId:null, createdAt:h(300)},
+    {id:uid(), recipient:"u1", sender:"u3", type:"like", videoId:"v5", createdAt:h(18)},
+  ],
+  trends: ["#buildinpublic","#easyrecipes","#formcheck","#offgrid","#glazing"],
+  currentUserId: null,
+};
+
+function load(){
+  try{ const raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return structuredClone(seed);
+}
+let S = load();
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
+
+const byId = (arr,id) => arr.find(x=>x.id===id);
+const user = (id) => byId(S.users,id);
+const me = () => S.currentUserId ? user(S.currentUserId) : null;
+const isLiked = (vid) => S.currentUserId && S.likes.some(l=>l.videoId===vid && l.userId===S.currentUserId);
+const likeCount = (vid) => S.likes.filter(l=>l.videoId===vid).length;
+const commentCount = (vid) => S.comments.filter(c=>c.videoId===vid).length;
+const isFollowing = (uid2) => S.currentUserId && S.follows.some(f=>f.follower===S.currentUserId && f.following===uid2);
+const followerCount = (uid2) => S.follows.filter(f=>f.following===uid2).length;
+const followingCount = (uid2) => S.follows.filter(f=>f.follower===uid2).length;
+
+function toast(msg){
+  const t = document.createElement("div"); t.className="toast"; t.textContent = msg;
+  document.getElementById("toastHost").appendChild(t);
+  setTimeout(()=>t.remove(), 2200);
+}
+function timeAgo(iso){
+  const d = Math.floor((now - new Date(iso).getTime())/1000);
+  if(d<60) return "just now";
+  if(d<3600) return Math.floor(d/60)+"m ago";
+  if(d<86400) return Math.floor(d/3600)+"h ago";
+  return Math.floor(d/86400)+"d ago";
+}
+
+/* ---------------- Views ---------------- */
+function showView(name){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-"+name).classList.add("active");
+  document.querySelectorAll(".nav-item,.bottom-nav button").forEach(b=>{
+    b.classList.toggle("active", b.dataset.view===name);
+  });
+  document.querySelector(".right-rail").style.display = name==="feed" ? "" : "none";
+  if(name==="discover") renderDiscover();
+  if(name==="following") renderFollowing();
+  if(name==="profile") renderProfile(me()?.username);
+  if(name==="inbox") renderInbox();
+  if(name==="upload") renderUpload();
+  window.location.hash = name;
+}
+document.querySelectorAll("[data-view]").forEach(el=>{
+  el.addEventListener("click", (e)=>{ e.preventDefault();
+    if(!me() && el.dataset.view!=="feed" && el.dataset.view!=="discover"){ showView("auth"); return; }
+    showView(el.dataset.view);
+  });
+});
+
+/* ---- Feed ---- */
+function videoCardHTML(v){
+  const u = user(v.userId);
+  const liked = isLiked(v.id);
+  const following = isFollowing(v.userId);
+  return `
+  <div class="card" data-video="${v.id}">
+    <video src="${v.src}" muted loop playsinline preload="metadata"></video>
+    <div class="veil"></div>
+    <button class="sound-btn icon-btn sound-toggle">🔇</button>
+    <div class="meta">
+      <div class="who">
+        <img class="avatar" src="${u.avatar}">
+        <b>@${u.username}</b>
+        <button class="follow-pill ${following?"following":""} follow-btn" data-user="${u.id}">${following?"Following":"Follow"}</button>
+      </div>
+      <p class="caption">${v.caption}</p>
+      <p class="hashtags">${v.tags.join(" ")}</p>
+    </div>
+    <div class="rail">
+      <button class="like-btn ${liked?"liked":""}"><span class="icon-btn ${liked?"liked":""}">${liked?"❤️":"🤍"}</span><span class="count">${likeCount(v.id)}</span></button>
+      <button class="comment-btn"><span class="icon-btn">💬</span><span class="count">${commentCount(v.id)}</span></button>
+      <button class="share-btn"><span class="icon-btn">↗️</span><span class="count">Share</span></button>
+    </div>
+  </div>`;
+}
+
+function renderFeed(){
+  const list = S.videos.filter(v=>v.priv==="public").sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const el = document.getElementById("feedList");
+  if(!list.length){ el.innerHTML = `<div class="empty"><h3>No videos yet</h3><p>Be the first to publish something.</p></div>`; return; }
+  el.innerHTML = list.map(videoCardHTML).join("");
+  observeCards(el);
+}
+
+function renderFollowing(){
+  const followingIds = S.currentUserId ? S.follows.filter(f=>f.follower===S.currentUserId).map(f=>f.following) : [];
+  const list = S.videos.filter(v=>followingIds.includes(v.userId)).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const el = document.getElementById("followingFeed");
+  if(!list.length){ el.innerHTML = `<div class="empty"><h3>Follow someone first</h3><p>Videos from accounts you follow will show up here.</p><button class="btn" onclick="showView('discover')">Find creators</button></div>`; return; }
+  el.innerHTML = list.map(videoCardHTML).join("");
+  observeCards(el);
+}
+
+function observeCards(container){
+  const vids = container.querySelectorAll("video");
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      const v = en.target;
+      if(en.isIntersecting && en.intersectionRatio>0.7){ v.play().catch(()=>{}); }
+      else { v.pause(); }
+    });
+  }, {threshold:[0,0.7,1], root:container});
+  vids.forEach(v=>io.observe(v));
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.hidden) vids.forEach(v=>v.pause());
+  });
+}
+
+document.body.addEventListener("click", (e)=>{
+  const card = e.target.closest(".card");
+  if(e.target.closest(".sound-toggle")){
+    const v = card.querySelector("video");
+    v.muted = !v.muted; e.target.closest(".sound-toggle").textContent = v.muted?"🔇":"🔊";
+    return;
+  }
+  if(e.target.closest(".like-btn")){
+    if(!requireAuth()) return;
+    const vid = card.dataset.video;
+    const existing = S.likes.find(l=>l.userId===S.currentUserId && l.videoId===vid);
+    if(existing) S.likes = S.likes.filter(l=>l!==existing);
+    else S.likes.push({userId:S.currentUserId, videoId:vid});
+    save(); refreshCard(card, vid);
+    return;
+  }
+  if(e.target.closest(".follow-btn")){
+    if(!requireAuth()) return;
+    const uid2 = e.target.closest(".follow-btn").dataset.user;
+    if(uid2===S.currentUserId) return;
+    const existing = S.follows.find(f=>f.follower===S.currentUserId && f.following===uid2);
+    if(existing) S.follows = S.follows.filter(f=>f!==existing);
+    else { S.follows.push({follower:S.currentUserId, following:uid2}); S.notifications.unshift({id:uid(),recipient:uid2,sender:S.currentUserId,type:"follow",videoId:null,createdAt:new Date().toISOString()}); }
+    save(); document.querySelectorAll(`.follow-btn[data-user="${uid2}"]`).forEach(btn=>{
+      const f = isFollowing(uid2); btn.textContent = f?"Following":"Follow"; btn.classList.toggle("following", f);
+    });
+    return;
+  }
+  if(e.target.closest(".comment-btn")){
+    openComments(card.dataset.video); return;
+  }
+  if(e.target.closest(".share-btn")){
+    navigator.clipboard?.writeText(location.href.split("#")[0] + "#video-" + card.dataset.video).catch(()=>{});
+    toast("Link copied to clipboard"); return;
+  }
+  if(e.target.tagName==="VIDEO"){
+    e.target.paused ? e.target.play().catch(()=>{}) : e.target.pause();
+  }
+});
+
+function refreshCard(card, vid){
+  const liked = isLiked(vid);
+  const btn = card.querySelector(".like-btn");
+  btn.classList.toggle("liked", liked);
+  btn.querySelector(".icon-btn").classList.toggle("liked", liked);
+  btn.querySelector(".icon-btn").textContent = liked?"❤️":"🤍";
+  btn.querySelector(".count").textContent = likeCount(vid);
+}
+
+function requireAuth(){
+  if(!me()){ showView("auth"); toast("Log in to do that"); return false; }
+  return true;
+}
+
+/* ---- Comments ---- */
+let activeVideoId = null;
+function openComments(vid){
+  activeVideoId = vid;
+  renderComments();
+  document.getElementById("commentsOverlay").classList.add("open");
+}
+function closeOverlay(id){ document.getElementById(id).classList.remove("open"); }
+function renderComments(){
+  const list = S.comments.filter(c=>c.videoId===activeVideoId).sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
+  const el = document.getElementById("commentsList");
+  el.innerHTML = list.length ? list.map(c=>{
+    const u = user(c.userId);
+    const mine = c.userId===S.currentUserId;
+    return `<div class="comment"><img class="avatar" src="${u.avatar}" style="width:30px;height:30px"><div class="who"><span><b>@${u.username}</b><small>${timeAgo(c.createdAt)}</small></span><p>${c.text}</p></div>${mine?`<button data-del="${c.id}">Delete</button>`:""}</div>`;
+  }).join("") : `<p style="color:var(--ink-dim);font-size:13.5px">No comments yet. Say something nice.</p>`;
+  const feedCard = document.querySelector(`.card[data-video="${activeVideoId}"] .comment-btn .count`);
+  if(feedCard) feedCard.textContent = commentCount(activeVideoId);
+}
+document.getElementById("commentsList").addEventListener("click",(e)=>{
+  const del = e.target.closest("[data-del]");
+  if(del){ S.comments = S.comments.filter(c=>c.id!==del.dataset.del); save(); renderComments(); }
+});
+document.getElementById("sendComment").addEventListener("click", postComment);
+document.getElementById("commentInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") postComment(); });
+function postComment(){
+  if(!requireAuth()) return;
+  const input = document.getElementById("commentInput");
+  const text = input.value.trim();
+  if(!text) return;
+  S.comments.push({id:uid(), userId:S.currentUserId, videoId:activeVideoId, text, createdAt:new Date().toISOString()});
+  const vidOwner = byId(S.videos, activeVideoId).userId;
+  if(vidOwner!==S.currentUserId) S.notifications.unshift({id:uid(),recipient:vidOwner,sender:S.currentUserId,type:"comment",videoId:activeVideoId,createdAt:new Date().toISOString()});
+  save(); input.value=""; renderComments();
+}
+
+/* ---- Right rail ---- */
+function renderRightRail(){
+  const el = document.getElementById("rightRail");
+  const suggestions = S.users.filter(u=>u.id!==S.currentUserId && !isFollowing(u.id)).slice(0,4);
+  el.innerHTML = `
+    <h4>Suggested for you</h4>
+    ${suggestions.map(u=>`<div class="suggest-row"><img class="avatar" src="${u.avatar}"><div class="who"><b>@${u.username}</b><span>${followerCount(u.id)} followers</span></div><button class="mini-follow ${isFollowing(u.id)?"following":""} follow-btn" data-user="${u.id}">${isFollowing(u.id)?"Following":"Follow"}</button></div>`).join("")}
+    <h4>Trending hashtags</h4>
+    ${S.trends.map(t=>`<div class="tag-row">${t}<span>${(Math.random()*90+10).toFixed(1)}M views</span></div>`).join("")}
+  `;
+}
+
+/* ---- Discover ---- */
+function renderDiscover(q=""){
+  const chips = document.getElementById("trendChips");
+  chips.innerHTML = S.trends.map(t=>`<button class="chip" data-tag="${t}">${t}</button>`).join("");
+  const grid = document.getElementById("discoverGrid");
+  const query = q.trim().toLowerCase();
+  let vids = S.videos.filter(v=>v.priv==="public");
+  if(query){
+    vids = vids.filter(v => v.caption.toLowerCase().includes(query) || v.tags.some(t=>t.toLowerCase().includes(query)) || user(v.userId).username.toLowerCase().includes(query));
+  } else {
+    vids = [...vids].sort((a,b)=>likeCount(b.id)-likeCount(a.id));
+  }
+  grid.innerHTML = vids.length ? vids.map(v=>`<div class="tile" data-video="${v.id}"><video src="${v.src}" muted preload="metadata"></video><div class="tile-cap">❤️ ${likeCount(v.id)}</div></div>`).join("")
+    : `<div class="empty"><h3>No results</h3><p>Try a different search.</p></div>`;
+}
+document.getElementById("searchInput").addEventListener("input",(e)=>renderDiscover(e.target.value));
+document.getElementById("trendChips").addEventListener("click",(e)=>{
+  const c = e.target.closest("[data-tag]"); if(!c) return;
+  document.getElementById("searchInput").value = c.dataset.tag; renderDiscover(c.dataset.tag);
+});
+document.getElementById("discoverGrid").addEventListener("click",(e)=>{
+  const tile = e.target.closest("[data-video]"); if(!tile) return;
+  showView("feed");
+  setTimeout(()=>{
+    const card = document.querySelector(`.card[data-video="${tile.dataset.video}"]`);
+    card?.scrollIntoView({block:"start"});
+  },50);
+});
+
+/* ---- Upload ---- */
+let selectedClip = null;
+function renderUpload(){
+  selectedClip = S.videos[0]?.src || null;
+  const grid = document.getElementById("clipGrid");
+  const options = ["ForBiggerFun","ForBiggerJoyrides","ForBiggerEscapes","Sintel","TearsOfSteel","ForBiggerMeltdowns"];
+  grid.innerHTML = options.map((name,i)=>`<div class="clip-pick ${i===0?"selected":""}" data-src="${clip(name)}"><video src="${clip(name)}" muted preload="metadata"></video></div>`).join("");
+  document.getElementById("capInput").value=""; document.getElementById("tagInput").value="";
+}
+document.getElementById("clipGrid").addEventListener("click",(e)=>{
+  const pick = e.target.closest(".clip-pick"); if(!pick) return;
+  document.querySelectorAll(".clip-pick").forEach(p=>p.classList.remove("selected"));
+  pick.classList.add("selected"); selectedClip = pick.dataset.src;
+});
+document.getElementById("publishBtn").addEventListener("click",()=>{
+  if(!requireAuth()) return;
+  const cap = document.getElementById("capInput").value.trim();
+  if(!cap){ toast("Add a caption before publishing"); return; }
+  const tags = document.getElementById("tagInput").value.trim().split(/[\s,]+/).filter(Boolean).map(t=>t.startsWith("#")?t:"#"+t);
+  const priv = document.getElementById("privInput").value;
+  S.videos.unshift({id:uid(), userId:S.currentUserId, src:selectedClip, caption:cap, tags, priv, createdAt:new Date().toISOString()});
+  save(); toast("Published!"); showView("feed"); renderFeed();
+});
+
+/* ---- Inbox ---- */
+function renderInbox(){
+  const el = document.getElementById("inboxList");
+  const items = S.notifications.filter(n=>n.recipient===S.currentUserId).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  if(!items.length){ el.innerHTML = `<div class="empty"><h3>Nothing yet</h3><p>Likes, comments, and new followers show up here.</p></div>`; return; }
+  const verb = {follow:"started following you", like:"liked your video", comment:"commented on your video"};
+  el.innerHTML = items.map(n=>{
+    const s = user(n.sender);
+    return `<div class="creator-card"><img class="avatar" src="${s.avatar}"><div class="who"><b>@${s.username}</b><span>${verb[n.type]} · ${timeAgo(n.createdAt)}</span></div></div>`;
+  }).join("");
+}
+
+/* ---- Profile ---- */
+function renderProfile(username){
+  const u = username ? S.users.find(x=>x.username===username) : me();
+  const el = document.getElementById("profilePage");
+  if(!u){ el.innerHTML = `<div class="empty"><h3>Not signed in</h3></div>`; return; }
+  const vids = S.videos.filter(v=>v.userId===u.id && (v.priv==="public" || u.id===S.currentUserId));
+  const own = u.id===S.currentUserId;
+  el.innerHTML = `
+    <div class="profile-head">
+      <img class="avatar" src="${u.avatar}">
+      <div>
+        <h2>${u.displayName}</h2>
+        <p class="handle">@${u.username}</p>
+        ${own ? "" : `<button class="follow-pill ${isFollowing(u.id)?"following":""} follow-btn" style="padding:6px 16px" data-user="${u.id}">${isFollowing(u.id)?"Following":"Follow"}</button>`}
+      </div>
+    </div>
+    <p class="bio">${u.bio||""}</p>
+    <div class="stat-row">
+      <div class="stat"><b>${vids.length}</b><span>Videos</span></div>
+      <div class="stat"><b>${followerCount(u.id)}</b><span>Followers</span></div>
+      <div class="stat"><b>${followingCount(u.id)}</b><span>Following</span></div>
+      <div class="stat"><b>${vids.reduce((s,v)=>s+likeCount(v.id),0)}</b><span>Likes</span></div>
+    </div>
+    ${own ? `<button class="btn ghost" id="editBtn" style="margin-bottom:18px">Edit profile</button>` : ""}
+    <div class="grid">${vids.length ? vids.map(v=>`<div class="tile" data-video="${v.id}"><video src="${v.src}" muted preload="metadata"></video><div class="tile-cap">❤️ ${likeCount(v.id)}</div></div>`).join("") : `<p style="color:var(--ink-dim)">No videos yet.</p>`}</div>
+  `;
+  el.querySelector(".grid")?.addEventListener("click",(e)=>{
+    const tile = e.target.closest("[data-video]"); if(!tile) return;
+    showView("feed"); setTimeout(()=>document.querySelector(`.card[data-video="${tile.dataset.video}"]`)?.scrollIntoView({block:"start"}),50);
+  });
+  const editBtn = document.getElementById("editBtn");
+  if(editBtn) editBtn.addEventListener("click", ()=>{
+    const newBio = prompt("Update your bio:", u.bio||"");
+    if(newBio!==null){ u.bio = newBio.slice(0,200); save(); renderProfile(u.username); }
+  });
+}
+
+/* ---- Auth ---- */
+document.getElementById("tabLogin").addEventListener("click",()=>toggleAuthTab(true));
+document.getElementById("tabRegister").addEventListener("click",()=>toggleAuthTab(false));
+function toggleAuthTab(login){
+  document.getElementById("tabLogin").classList.toggle("active", login);
+  document.getElementById("tabRegister").classList.toggle("active", !login);
+  document.getElementById("loginForm").style.display = login?"":"none";
+  document.getElementById("registerForm").style.display = login?"none":"";
+  document.getElementById("authErr").textContent="";
+}
+document.getElementById("loginBtn").addEventListener("click",()=>{
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass = document.getElementById("loginPass").value;
+  const u = S.users.find(x=>x.email.toLowerCase()===email.toLowerCase() && x.password===pass);
+  if(!u){ document.getElementById("authErr").textContent="Incorrect email or password."; return; }
+  signIn(u.id);
+});
+document.getElementById("regBtn").addEventListener("click",()=>{
+  const username = document.getElementById("regUser").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  const pass = document.getElementById("regPass").value;
+  const err = document.getElementById("authErr");
+  if(!username || !email || !pass){ err.textContent="All fields are required."; return; }
+  if(pass.length<6){ err.textContent="Password must be at least 6 characters."; return; }
+  if(S.users.some(u=>u.username.toLowerCase()===username.toLowerCase())){ err.textContent="That username is taken."; return; }
+  const newUser = {id:uid(), username, displayName:username, bio:"", avatar:`https://i.pravatar.cc/150?u=${encodeURIComponent(username)}`, email, password:pass};
+  S.users.push(newUser); save(); signIn(newUser.id);
+});
+document.getElementById("demoBtn").addEventListener("click",()=>signIn("u1"));
+function signIn(userId){
+  S.currentUserId = userId; save(); renderMeChip(); showView("feed"); renderFeed(); renderRightRail();
+  toast(`Welcome, @${user(userId).username}`);
+}
+function renderMeChip(){
+  const chip = document.getElementById("meChip");
+  const u = me();
+  chip.innerHTML = u
+    ? `<img class="avatar" src="${u.avatar}"><div class="who"><b>@${u.username}</b><span>View profile</span></div>`
+    : `<div class="who"><b>Not signed in</b><span style="cursor:pointer;color:var(--flare)" id="signInLink">Log in</span></div>`;
+  chip.onclick = ()=> u ? showView("profile") : showView("auth");
+}
+
+/* ---- Theme ---- */
+document.getElementById("themeBtn").addEventListener("click",()=>{
+  const root = document.documentElement;
+  const current = root.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light");
+  root.setAttribute("data-theme", current==="dark" ? "light" : "dark");
+});
+
+/* ---------------- Boot ---------------- */
+renderMeChip();
+renderFeed();
+renderRightRail();
+if(!me()) showView("auth"); else showView("feed");
+</script>
+</body>
+</html>
